@@ -11,6 +11,10 @@ export class ListaLivrosComponent {
   campoBusca: string = '';
   constructor(private livroService: LivroService) {}
   buscarLivros() {
-    this.livroService.buscar(this.campoBusca);
+    this.livroService.buscar(this.campoBusca).subscribe({
+      next: (retornoApi) => console.log(retornoApi),
+      error: (erro) => console.error(erro),
+      complete: () => console.log('Observable completo!'),
+    });
   }
 }
