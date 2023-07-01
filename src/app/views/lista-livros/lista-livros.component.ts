@@ -1,38 +1,37 @@
-import { Item, VolumeInfo } from './../../models/interfaces';
-import { Component, OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { FormControl } from '@angular/forms';
+import { Item } from './../../models/interfaces';
+import { Component } from '@angular/core';
 import { Livro } from 'src/app/models/interfaces';
 import { LivroVolumeInfo } from 'src/app/models/livroVolumeInfo';
 import { LivroService } from 'src/app/service/livro.service';
 
+//importações do RXJS
+import { debounceTime, filter, map, switchMap, tap } from 'rxjs';
+
+const PAUSA = 300;
 @Component({
   selector: 'app-lista-livros',
   templateUrl: './lista-livros.component.html',
   styleUrls: ['./lista-livros.component.css'],
 })
-export class ListaLivrosComponent implements OnDestroy {
-  listaLivros: Livro[] = [];
-  campoBusca: string = '';
-  subscription: Subscription;
-  livro: Livro;
+export class ListaLivrosComponent {
+  campoBusca = new FormControl();
 
   constructor(private livroService: LivroService) {}
-  buscarLivros() {
-    this.subscription = this.livroService.buscar(this.campoBusca).subscribe({
-      next: (items) => {
-        this.listaLivros = this.livrosResultadoParaLivros(items);
-      },
-      error: (erro) => console.error(erro),
-    });
-  }
+  livrosEncontrados$ = this.campoBusca.valueChanges.pipe(
+    debounceTime(PAUSA), //debounceTime() serve para criar um delay, a requisição só será feita após esse delay (PAUSA = 300 milisegundos)
+    filter((valorDigitado) => valorDigitado.length >= 3), //filter é utilizado para filtrar a busca, nesse caso só será feita a requisição ao servidor a partir de 3 caracteres digitados.
+    tap(() => console.log('Fluxo inicial')),
+    switchMap((valorDigitado) => this.livroService.buscar(valorDigitado)),
+    tap((retornoAPI) => console.log(retornoAPI)),
+    map((items) => {
+      return this.livrosResultadoParaLivros(items);
+    })
+  );
 
   livrosResultadoParaLivros(items: Item[]): LivroVolumeInfo[] {
     return items.map((item) => {
       return new LivroVolumeInfo(item);
     });
-  }
-
-  ngOnDestroy() {
-    this.subscription.unsubscribe(); //libera recursos e cancela a execução do Observable
   }
 }
