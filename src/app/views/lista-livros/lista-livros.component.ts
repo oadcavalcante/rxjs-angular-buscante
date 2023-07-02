@@ -6,7 +6,17 @@ import { LivroVolumeInfo } from 'src/app/models/livroVolumeInfo';
 import { LivroService } from 'src/app/service/livro.service';
 
 //importações do RXJS
-import { debounceTime, filter, map, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  map,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
 
 const PAUSA = 300;
 @Component({
@@ -16,6 +26,7 @@ const PAUSA = 300;
 })
 export class ListaLivrosComponent {
   campoBusca = new FormControl();
+  mensagemErro = '';
 
   constructor(private livroService: LivroService) {}
   livrosEncontrados$ = this.campoBusca.valueChanges.pipe(
@@ -26,6 +37,11 @@ export class ListaLivrosComponent {
     tap((retornoAPI) => console.log(retornoAPI)),
     map((items) => {
       return this.livrosResultadoParaLivros(items);
+    }),
+    catchError(() => {
+      // o catchError captura um erro se houver
+      this.mensagemErro = 'Ops, ocorreu um erro. Recarregue a aplicação';
+      return EMPTY;
     })
   );
 
