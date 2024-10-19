@@ -1,11 +1,9 @@
 import { FormControl } from '@angular/forms';
 import { Item, LivrosResultado } from './../../models/interfaces';
 import { Component } from '@angular/core';
-import { Livro } from 'src/app/models/interfaces';
 import { LivroVolumeInfo } from 'src/app/models/livroVolumeInfo';
 import { LivroService } from 'src/app/service/livro.service';
 
-//importações do RXJS
 import {
   EMPTY,
   catchError,
@@ -19,7 +17,8 @@ import {
   throwError,
 } from 'rxjs';
 
-const PAUSA = 300;
+const DEBOUNCE_TIME_MS = 300;
+
 @Component({
   selector: 'app-lista-livros',
   templateUrl: './lista-livros.component.html',
@@ -30,44 +29,20 @@ export class ListaLivrosComponent {
   mensagemErro = '';
   livrosResultado: LivrosResultado;
 
-  constructor(private livroService: LivroService) {}
-  // totalLivros$ = this.campoBusca.valueChanges.pipe(
-  //   debounceTime(PAUSA),
-  //   filter((valorDigitado) => valorDigitado.length >= 3),
-  //   tap(() => console.log('Fluxo inicial')),
-  //   switchMap((valorDigitado) => this.livroService.buscar(valorDigitado)),
-  //   map((resultado) => {
-  //     this.livrosResultado = resultado;
-  //   }),
-  //   catchError((erro) => {
-  //     console.log(erro);
-  //     return of(); // o of() emite um valor e completa o Observable
-  //   })
-  // );
-
+  constructor(private livroService: LivroService) { }
   livrosEncontrados$ = this.campoBusca.valueChanges.pipe(
-    debounceTime(PAUSA), //debounceTime() serve para criar um delay, a requisição só será feita após esse delay (PAUSA = 300 milisegundos)
-    filter((valorDigitado) => valorDigitado.length >= 3), //filter é utilizado para filtrar a busca, nesse caso só será feita a requisição ao servidor a partir de 3 caracteres digitados.
-    tap(() => console.log('Fluxo inicial')),
+    debounceTime(DEBOUNCE_TIME_MS),
+    filter((valorDigitado) => valorDigitado.length >= 3),
+    tap(() => console.log('Iniciando busca de livros')),
     switchMap((valorDigitado) => this.livroService.buscar(valorDigitado)),
     map((resultado) => (this.livrosResultado = resultado)),
-    tap((retornoAPI) => console.log(retornoAPI)),
+    tap((retornoAPI) => console.log('Resultados da API:', retornoAPI)),
     map((resultado) => resultado.items ?? []),
     map((items) => this.livrosResultadoParaLivros(items)),
     catchError((erro) => {
-      // o catchError captura um erro se houver
-      // this.mensagemErro = 'Ops, ocorreu um erro. Recarregue a aplicação';
-      // return EMPTY;
-      // this.mensagemErro ='Ops, ocorreu um erro. Recarregue a aplicação!'
-      // return EMPTY
-      console.log(erro);
-      return throwError(
-        () =>
-          new Error(
-            (this.mensagemErro =
-              'Ops, ocorreu um erro. Recarregue a aplicação!')
-          )
-      );
+      console.log('Erro ao buscar livros:', erro);
+      this.mensagemErro = 'Ops, ocorreu um erro. Recarregue a aplicação!';
+      return throwError(() => new Error(this.mensagemErro));
     })
   );
 
