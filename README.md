@@ -1,27 +1,25 @@
-# Buscante
+# APP Angular - Buscante - Utilizando RXJS para Busca de Livros
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 14.0.3.
+- A aplicação utiliza a API de Livros do Google. Ex: https://www.googleapis.com/books/v1/volumes?q=ddd
 
-## Development server
+![screenshot](https://github.com/oadcavalcante/rxjs-angular-buscante/blob/main/src/assets/imagens/screenshot.png)
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+## Operadores RXJS utilizados:
 
-## Code scaffolding
+* **debounceTime(PAUSA)**: Esse operador faz com que a requisição só seja feita após um atraso (definido em DEBOUNCE_TIME_MS, que é 300 milissegundos). Isso é útil para evitar requisições excessivas enquanto o usuário ainda está digitando.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+* **filter((valorDigitado) => valorDigitado.length >= 3)**: Apenas permite que a busca aconteça se o usuário digitou 3 ou mais caracteres. Isso evita requisições desnecessárias.
 
-## Build
+* **tap(() => console.log('Fluxo inicial'))**: Esse operador é usado para realizar efeitos colaterais, como registrar informações no console. Aqui, ele indica que o fluxo de busca começou.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+* **switchMap((valorDigitado) => this.livroService.buscar(valorDigitado))**: Esse operador troca o Observable atual por outro. Aqui, ele chama o método buscar do livroService para fazer a requisição com o valor digitado.
 
-## Running unit tests
+* **map((resultado) => (this.livrosResultado = resultado))**: Esse operador transforma o resultado da busca. Ele armazena o resultado na variável livrosResultado.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+* **tap((retornoAPI) => console.log(retornoAPI))**: Mais um tap, que registra o retorno da API no console.
 
-## Running end-to-end tests
+* **map((resultado) => resultado.items ?? [])**: Aqui, ele transforma o resultado para pegar apenas a lista de itens (livros). Se não houver itens, retorna um array vazio.
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+* **map((items) => this.livrosResultadoParaLivros(items))**: Essa linha transforma os itens em um formato mais utilizável, chamando o método livrosResultadoParaLivros.
 
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+* **catchError((erro) => {...})**: Esse operador captura qualquer erro que possa ocorrer durante o fluxo. Ele registra o erro no console e define uma mensagem de erro para ser exibida.
